@@ -1,0 +1,205 @@
+import pygtk
+pygtk.require('2.0')
+import gtk, gobject
+import signal
+import pango
+import subprocess
+import os
+import midi
+import extract_bar as bar
+import time
+import threading
+
+
+gtk.gdk.threads_init()
+
+class MyThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self, *args, **kwargs):
+        super(MyThread, self).__init__(*args, **kwargs)
+        self._stop = threading.Event()
+
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
+
+
+
+
+
+class Teacher:
+
+    def __init__(self):
+    	self.proc = None
+    	self.filename = ""
+    	self.textview = gtk.TextView()
+    	self.practicethread = MyThread()
+        
+        window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        window.set_size_request(700, 350)
+        window.set_title("The Improvisor")
+        window.connect("delete_event", 
+                       lambda w,e: gtk.main_quit())
+        
+        
+        table = gtk.Table(4, 4, True)
+        window.add(table)
+        
+        button1 = gtk.Button("Open")
+        button1.connect("clicked", self.clicked_open_file)
+        button1.show()
+        
+        button2 = gtk.Button("Play")
+        button2.connect("clicked", self.clicked_play)
+        button2.show()
+        
+        button3 = gtk.Button("Stop")
+        button3.connect("clicked", self.clicked_stop)
+        button3.show()
+        
+        button4 = gtk.Button("Practice!")
+        button4.connect("clicked", self.clicked_practice)
+        button4.show()
+        
+        fontdesc = pango.FontDescription('monospace')
+        self.textview.modify_font(fontdesc)
+        scroll = gtk.ScrolledWindow()
+        scroll.add(self.textview)
+        self.textview.show()
+        
+
+        table.attach(button1, 0, 1, 0, 1)
+        table.attach(button2, 0, 1, 1, 2)
+        table.attach(button3, 0, 1, 2, 3)
+        table.attach(button4, 0, 4, 3, 4)
+        table.attach(scroll, 1, 4, 0, 3)
+ 
+        
+       	window.show_all()
+       
+     
+     
+       
+       
+    def clicked_play(self, widget):
+    	filename = self.filename
+    	
+    	if filename == "":
+    	    parent = None
+    	    alert = gtk.MessageDialog(parent, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, 
+                  gtk.BUTTONS_CLOSE, "Please Select a File")
+            alert.run()
+            alert.destroy()
+            
+            
+        else :
+            
+            self.proc = subprocess.Popen(["timidity", filename])
+
+    
+    def clicked_open_file(self, widget):
+        chooser = gtk.FileChooserDialog(title="Open a file",action=gtk.FILE_CHOOSER_ACTION_OPEN,
+                                  buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+        response = chooser.run()
+        res = chooser.get_filename()
+        self.filename = res
+        self.insert_text("File Selected : " + os.path.basename(res))
+        
+        chooser.destroy() 
+   		
+    def clicked_stop(self, widget=None):
+        
+        if self.practicethread.isAlive():
+            self.practicethread.stop()
+            
+        
+        if self.proc :
+            self.proc.terminate()
+            self.proc.wait()
+            
+        else : 
+            return 
+           
+    def insert_text(self, text):
+        self.textview.get_buffer().insert_at_cursor(text+"\n")
+    
+    
+    
+    
+    def clicked_practice(self, widget):
+        # Start the method practice in a new thread 
+        #threading.Thread(target=self.practice) .start()
+        self.practicethread = MyThread(target=self.practice)
+        self.practicethread.start()
+    
+    
+    # The Practice Script Goes here 
+    def practice(self):
+        if self.filename == "":
+    	    parent = None
+    	    alert = gtk.MessageDialog(parent, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, 
+                  gtk.BUTTONS_CLOSE, "Please Select a File")
+            alert.run()
+            alert.destroy()
+        
+        else:
+            pattern = midi.read_midifile("%s" %(self.filename))
+            pattern.make_ticks_abs()
+            track = pattern[0]
+            position = 0
+        
+            """    
+            # While loop checks if thread is stopped
+            while not self.practicethread.stopped():
+	            position = bar.extract_bar(position, pattern)
+	            
+	            # Return the result of insert_text to the main thread
+	            gobject.idle_add(self.insert_text, "\nPlaying a new section of the song\nListen Carefully!\n----------------------")
+	            play = subprocess.Popen(["timidity", "temp.mid"])
+	            
+	            while play.poll() is None:
+	                if self.practicethread.stopped:
+	                    play.terminate()
+                        #play.join()
+                        return
+                    time.sleep(.1) # Sleep 
+	        """   
+	           
+	          # Recording 10 seconds of user Input 
+            gobject.idle_add(self.insert_text, "\n Try to Play what You've just heard\n------------------------")
+            time.sleep(1)
+            record = subprocess.Popen(["timeout", "10", "arecord", "temp.wav"])
+	            
+	            
+	            
+	            
+	        
+	        	
+	            # The rest of the code goes in here
+	        
+	        
+	            #-----------------------------
+	        
+	           
+	            # Check If we've reached the end of track
+	        if(track[-1].tick == position):
+	            break
+	        	 
+	        	
+	        	  
+	        	 
+	     	
+    def main(self):
+        signal.signal(signal.SIGTERM, self.clicked_stop)
+        gtk.main()
+        return 0
+        
+
+
+
+Teacher().main()
+
