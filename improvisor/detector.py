@@ -69,15 +69,17 @@ class Detector(object):
                 np.int16
             )
             fft = np.fft.rfft(stream_buffer * hanning_window)
+            power = (20 * np.log10(np.abs(fft))).argmax()
             freq = (np.abs(fft[imin:imax]).argmax() + imin) * freq_step
 
             note = _freq_to_midi(freq)
             note_abs = int(round(note))
-
+            frames_processed += 1
             if frames_processed >= frames_per_fft:
-                print('freq: {:7.2f} Hz note: {:>3s} {:+.2f}'.format(
-                    freq, note_abs, note - note_abs
-                ))
+                if np.average(power) > 60:
+                    print('freq: {:7.2f} power: {} Hz note: {} {:+.2f}'.format(
+                        freq, power, note_abs, note - note_abs
+                    ))
 
     def play(self, sound_data):
         """
