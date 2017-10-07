@@ -21,7 +21,7 @@ class TestDetector(unittest.TestCase):
         sampling_rate = DETECTION_CONFIG['SAMPLING_RATE']
         interval = DETECTION_CONFIG['TIME_INTERVAL']
         self.test_detector = Detector()
-        self.sound_data = 63 * np.sin(np.linspace(0, 2*np.pi, sampling_rate * interval)) / 2 + 128
+        self.sound_data = round(127 * np.sin(np.linspace(0, 2*np.pi, sampling_rate * interval))) + 128
         # WIP
 
     def test_player(self):
