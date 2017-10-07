@@ -6,8 +6,7 @@ jobs:
       - image: circleci/python:3.6
     steps:
       - checkout
-      - run:
-          commmand: sudo apt-get install python-pyaudio
+      - run: sudo apt-get install python-pyaudio
       - run:
           command: |
             python3 -m venv venv
