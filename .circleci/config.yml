@@ -6,7 +6,7 @@ jobs:
       - image: circleci/python:3.6
     steps:
       - checkout
-      - run: sudo apt-get install portaudio
+      - run: sudo apt-get install portaudio19-dev
       - run:
           command: |
             python3 -m venv venv
