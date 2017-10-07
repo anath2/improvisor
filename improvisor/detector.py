@@ -18,11 +18,11 @@ class Detector(object):
 
     def __init__(self):
         self.sampling_rate = DETECTION_CONFIG['SAMPLING_RATE']
-        self.chunk_size = DETECTION_CONFIG['FRAME_SIZE']
-        self.chunks_per_fft = DETECTION_CONFIG['FRAMES_PER_FFT']
+        self.chunk_size = DETECTION_CONFIG['CHUNK_SIZE']
+        self.chunks_per_fft = DETECTION_CONFIG['CHUNK_PER_FFT']
         self.note_min = DETECTION_CONFIG['NOTE_MIN']
         self.note_max = DETECTION_CONFIG['NOTE_MAX']
-
+        self.time_period = DETECTION_CONFIG['TIME_INTERVAL']
         self.samples_per_fft = self.chunk_size * self.chunks_per_fft
         self.freq_step = self.sampling_rate / self.samples_per_fft
         # The variable samples per fft is the unit in frequency domain
@@ -96,7 +96,8 @@ class Detector(object):
             Convert the frequency and time data
             into wave
         """
-        pass
+        number_of_samples = self.time_period * self.sampling_rate
+        data = np.zeros(number_of_samples)
 
     def play(self, sound_data):
         """
