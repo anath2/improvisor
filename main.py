@@ -7,7 +7,8 @@ def main():
         Detector runner
     """
     det = Detector()
-    det.listen()
+    sound_data = det.listen()
+    det.play(sound_data)
 
 if __name__ == '__main__':
     main()

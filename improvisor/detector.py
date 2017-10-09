@@ -25,7 +25,6 @@ class Detector(object):
         self.time_period = DETECTION_CONFIG['TIME_INTERVAL']
         self.samples_per_fft = self.chunk_size * self.chunks_per_fft
         self.freq_step = self.sampling_rate / self.samples_per_fft
-        # The variable samples per fft is the unit in frequency domain
 
     def listen(self):
         """
@@ -87,17 +86,9 @@ class Detector(object):
                     print('freq: {:7.2f} power: {} Hz note: {} {:+.2f}'.format(
                         freq, power, note_abs, note - note_abs
                     ))
-                    recording_data.append((time.time() - start_time, note_abs,))
+                    recording_data.append((time.time() - start_time, freq,))
             if time.time() - start_time > recording_time:
-                return recording_data
-
-    def record_processing(self, recording_data):
-        """
-            Convert the frequency and time data
-            into wave
-        """
-        number_of_samples = self.time_period * self.sampling_rate
-        data = np.zeros(number_of_samples)
+                return _process(recording_data)
 
     def play(self, sound_data):
         """
@@ -105,12 +96,19 @@ class Detector(object):
         """
         sampling_rate = self.sampling_rate
         stream = pyaudio.PyAudio().open(
-            format=pyaudio.paInt16,
+            format=pyaudio.paFloat32,
             channels=1,
             rate=sampling_rate,
             output=True,
         )
-        stream.write(sound_data)
+
+        for delay, freq in sound_data:
+            print(delay)
+            time.sleep(2)
+            wave = _create_wave(freq, sampling_rate)
+            stream.write(wave)
+
+
 
     def _midi_to_fftbin(self, note):
         """
@@ -119,6 +117,22 @@ class Detector(object):
         return _midi_to_freq(note) / self.freq_step
 
 # Internals
+
+def _process(recording_data):
+    """
+        Convert the frequency and time data
+        into wave
+    """
+    processed = []
+    for index, elem in enumerate(recording_data):
+        current_time, current_freq = elem
+        if index > 0:
+            prev_time, prev_freq = recording_data[index - 1]
+            if prev_freq != current_freq:
+                processed.append((current_time - prev_time, current_freq,))
+        else:
+            processed.append((current_time, current_freq,))
+    return processed
 
 def _freq_to_midi(freq):
     """
@@ -131,3 +145,18 @@ def _midi_to_freq(midi):
         midi to frequency
     """
     return 440 * 2.0 ** ((midi - 69) / 12)
+
+def _create_wave(freq, sampling_rate):
+    """
+        Write a wave using sine function
+    """
+    wave = (
+        np.sin(
+            2 * np.pi * np.arange(
+                sampling_rate * 3.0
+            ) * freq / sampling_rate
+        )
+    ).astype(np.float32)
+    return wave
+
+
