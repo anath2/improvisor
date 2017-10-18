@@ -82,9 +82,9 @@ class Detector(object):
             note_abs = int(round(note))
             frames_processed += 1
             if frames_processed >= chunks_per_fft:
-                if np.average(power) > 60:
-                    print('freq: {:7.2f} power: {} Hz note: {} {:+.2f}'.format(
-                        freq, power, note_abs, note - note_abs
+                if np.average(power) > 400:
+                    print('freq: {:7.2f} power: {} note: {} {:+.2f} timestamp: {}'.format(
+                        freq, np.average(power), note_abs, note - note_abs, time.time() - start_time
                     ))
                     recording_data.append((time.time() - start_time, freq,))
             if time.time() - start_time > recording_time:
@@ -101,14 +101,15 @@ class Detector(object):
             rate=sampling_rate,
             output=True,
         )
-
-        for delay, freq in sound_data:
-            print(delay)
-            time.sleep(2)
-            wave = _create_wave(freq, sampling_rate)
+        for interval, freq in sound_data:
+            # Add a delay here
+                # Calculate the time period the note stays the same
+                # And add it to the pressed time
+                # Calculate the time between next note and time of last note
+                # Create a delay
+            time.sleep(interval)
+            wave = _create_wave(freq, sampling_rate, 1)
             stream.write(wave)
-
-
 
     def _midi_to_fftbin(self, note):
         """
@@ -146,17 +147,17 @@ def _midi_to_freq(midi):
     """
     return 440 * 2.0 ** ((midi - 69) / 12)
 
-def _create_wave(freq, sampling_rate):
+def _create_wave(freq, sampling_rate, pressed_time):
     """
-        Write a wave using sine function
+        Write a wave using sine function. pressed_time indicates how long
+        the note is 'pressed'.
     """
     wave = (
         np.sin(
             2 * np.pi * np.arange(
-                sampling_rate * 3.0
+                sampling_rate * pressed_time
             ) * freq / sampling_rate
         )
     ).astype(np.float32)
     return wave
-
 
