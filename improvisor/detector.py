@@ -5,6 +5,7 @@
     To know more, check out the wikipedia entries
 """
 import time
+import itertools
 import numpy as np
 import pyaudio
 
@@ -81,12 +82,19 @@ class Detector(object):
             note = _freq_to_midi(freq)
             note_abs = int(round(note))
             frames_processed += 1
-            if frames_processed >= chunks_per_fft:
-                if np.average(power) > 400:
-                    print('freq: {:7.2f} power: {} note: {} {:+.2f} timestamp: {}'.format(
-                        freq, np.average(power), note_abs, note - note_abs, time.time() - start_time
-                    ))
-                    recording_data.append((time.time() - start_time, freq,))
+
+            if frames_processed >= chunks_per_fft and np.average(power) > 300:
+                print(
+                    'freq: {:7.2f} power: {} note: {} {:+.2f} timestamp: {}'.format(
+                        freq,
+                        np.average(power),
+                        note_abs,
+                        note - note_abs,
+                        time.time() - start_time
+                    )
+                )
+                recording_data.append((time.time() - start_time, note_abs,))
+
             if time.time() - start_time > recording_time:
                 return _process(recording_data)
 
@@ -101,13 +109,14 @@ class Detector(object):
             rate=sampling_rate,
             output=True,
         )
-        for interval, freq in sound_data:
+        for interval, note in sound_data:
             # Add a delay here
                 # Calculate the time period the note stays the same
                 # And add it to the pressed time
                 # Calculate the time between next note and time of last note
                 # Create a delay
             time.sleep(interval)
+            freq = _midi_to_freq(note)
             wave = _create_wave(freq, sampling_rate, 1)
             stream.write(wave)
 
@@ -124,15 +133,22 @@ def _process(recording_data):
         Convert the frequency and time data
         into wave
     """
+    # Get the time interval the note stays the same
+    # The start point of the note to the end point of the note
     processed = []
-    for index, elem in enumerate(recording_data):
-        current_time, current_freq = elem
-        if index > 0:
-            prev_time, prev_freq = recording_data[index - 1]
-            if prev_freq != current_freq:
-                processed.append((current_time - prev_time, current_freq,))
-        else:
-            processed.append((current_time, current_freq,))
+    for time, note in recording_data:
+        start = time
+        interval = 0
+        # calculate the interval note stays the same
+
+        while True:
+            current_time, current_note = elem
+            if index > 0:
+                prev_time, prev_note = recording_data[index - 1]
+                if prev_note != current_note:
+                    processed.append((current_time - prev_time, current_note,))
+            else:
+                processed.append((current_time, current_note,))
     return processed
 
 def _freq_to_midi(freq):
