@@ -132,27 +132,40 @@ def _process(recording_data):
         Where, note is midi note value, delay is the interval between current
         and previous note and duration is the time interval, the note lasts
     """
-    # Get the time interval the note stays the same
-    # The start point of the note to the end point of the note
-    note_with_times = [
+    # Algorithm :
+        # For each note get pair with the note and
+        # list of times where note doesn't change
+
+        # Do another pass over the list and filter out notes
+        # with very short durations
+
+        # Calculate delays and durations for each note and return the result
+
+    note_times = [
         (note, list(time for _, time in values)) for note, values in itertools.groupby(
             recording_data,
             lambda x: x[0]
         )
     ]
+    # Filter out all notes with duration less than .5
+    note_times_filtered = [
+        (note, times) for note, times in note_times
+        if (times[-1] - times[0]) > 1
+    ]
     processed = []
-    for index, note_data in enumerate(note_with_times):
+    for index, note_data in enumerate(note_times_filtered):
         current_note, current_times = note_data
         # Use previous note to calculate delay
         if index > 0:
             # Create a temporary index pointing to the previous note
             temp_index = index - 1
-            _, prev_times = note_with_times[temp_index]
+            _, prev_times = note_times_filtered[temp_index]
             delay = current_times[0] - prev_times[-1]
         else:
             delay = current_times[0] - 0
         duration = current_times[-1] - current_times[0]
         processed.append((current_note, delay, duration,))
+    print(processed)
     return processed
 
 def _freq_to_midi(freq):
