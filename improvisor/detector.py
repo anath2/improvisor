@@ -93,7 +93,7 @@ class Detector(object):
                         time.time() - start_time
                     )
                 )
-                recording_data.append((time.time() - start_time, note_abs,))
+                recording_data.append((note_abs, time.time() - start_time,))
 
             if time.time() - start_time > recording_time:
                 return _process(recording_data)
@@ -109,15 +109,10 @@ class Detector(object):
             rate=sampling_rate,
             output=True,
         )
-        for interval, note in sound_data:
-            # Add a delay here
-                # Calculate the time period the note stays the same
-                # And add it to the pressed time
-                # Calculate the time between next note and time of last note
-                # Create a delay
-            time.sleep(interval)
+        for note, delay, duration in sound_data:
+            time.sleep(delay)
             freq = _midi_to_freq(note)
-            wave = _create_wave(freq, sampling_rate, 1)
+            wave = _create_wave(freq, sampling_rate, duration)
             stream.write(wave)
 
     def _midi_to_fftbin(self, note):
@@ -132,23 +127,32 @@ def _process(recording_data):
     """
         Convert the frequency and time data
         into wave
+        RETURNS:
+            (note, delay, duration)
+        Where, note is midi note value, delay is the interval between current
+        and previous note and duration is the time interval, the note lasts
     """
     # Get the time interval the note stays the same
     # The start point of the note to the end point of the note
+    note_with_times = [
+        (note, list(time for _, time in values)) for note, values in itertools.groupby(
+            recording_data,
+            lambda x: x[0]
+        )
+    ]
     processed = []
-    for time, note in recording_data:
-        start = time
-        interval = 0
-        # calculate the interval note stays the same
-
-        while True:
-            current_time, current_note = elem
-            if index > 0:
-                prev_time, prev_note = recording_data[index - 1]
-                if prev_note != current_note:
-                    processed.append((current_time - prev_time, current_note,))
-            else:
-                processed.append((current_time, current_note,))
+    for index, note_data in enumerate(note_with_times):
+        current_note, current_times = note_data
+        # Use previous note to calculate delay
+        if index > 0:
+            # Create a temporary index pointing to the previous note
+            temp_index = index - 1
+            _, prev_times = note_with_times[temp_index]
+            delay = current_times[0] - prev_times[-1]
+        else:
+            delay = current_times[0] - 0
+        duration = current_times[-1] - current_times[0]
+        processed.append((current_note, delay, duration,))
     return processed
 
 def _freq_to_midi(freq):
