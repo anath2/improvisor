@@ -62,13 +62,13 @@ class Detector(object):
 
         recording_data = []
         frames_processed = 0
-        recording_time = 5.0 # Record for 5 seconds
         stream_buffer = np.zeros(samples_per_fft, dtype=np.float)
         stream.start_stream()
 
         print('Sampling at {}hz with maximum resolution of {}'.format(sampling_rate, freq_step))
 
-        start_time = time.time()
+        start_time = time.time() # Timer starts
+        time_since_silence = 0   # Initialize time since silence
         while stream.is_active():
             stream_buffer[:-chunk_size] = stream_buffer[chunk_size:]
             stream_buffer[-chunk_size:] = np.fromstring(
@@ -83,20 +83,18 @@ class Detector(object):
             note_abs = int(round(note))
             frames_processed += 1
 
-            if frames_processed >= chunks_per_fft and np.average(power) > 300:
-                print(
-                    'freq: {:7.2f} power: {} note: {} {:+.2f} timestamp: {}'.format(
-                        freq,
-                        np.average(power),
-                        note_abs,
-                        note - note_abs,
-                        time.time() - start_time
-                    )
-                )
-                recording_data.append((note_abs, time.time() - start_time,))
-
-            if time.time() - start_time > recording_time:
-                return _process(recording_data)
+            if frames_processed >= chunks_per_fft:
+                if np.average(power) > 300:
+                    time_since_silence = 0 # Reset silence
+                    note_timestamp = time.time() - start_time
+                    recording_data.append((note_abs, note_timestamp))
+                    print('time : {:.2f} midi_note: {}'.format(
+                        note_timestamp, note_abs
+                    ))
+                else:
+                    time_since_silence += (time.time() - start_time)
+                    if time_since_silence > 5.0: # If silence for more than 5 sec
+                        return _process(recording_data)
 
     def play(self, sound_data):
         """
@@ -114,6 +112,7 @@ class Detector(object):
             freq = _midi_to_freq(note)
             wave = _create_wave(freq, sampling_rate, duration)
             stream.write(wave)
+            time.sleep(duration) # Sleep for the duration
 
     def _midi_to_fftbin(self, note):
         """
@@ -147,11 +146,14 @@ def _process(recording_data):
             lambda x: x[0]
         )
     ]
-    # Filter out all notes with duration less than .5
+    # Filter out all notes with duration less than .5 second
     note_times_filtered = [
         (note, times) for note, times in note_times
-        if (times[-1] - times[0]) > 1
+        if (times[-1] - times[0]) > .5
     ]
+
+    # Filter out notes that that are bunched together
+
     processed = []
     for index, note_data in enumerate(note_times_filtered):
         current_note, current_times = note_data
