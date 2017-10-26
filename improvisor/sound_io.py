@@ -11,7 +11,7 @@ import pyaudio
 
 from .config import DETECTION_CONFIG
 
-class Detector(object):
+class SoundDetector(object):
     """
         Detection module reads sound data using python audio library(pyAudio)
         configuration files are loaded from config module
@@ -79,7 +79,7 @@ class Detector(object):
             power = (20 * np.log10(np.abs(fft))).argmax()
             freq = (np.abs(fft[imin:imax]).argmax() + imin) * freq_step
 
-            note = _freq_to_midi(freq)
+            note = self._freq_to_midi(freq)
             note_abs = int(round(note))
             frames_processed += 1
 
@@ -94,9 +94,35 @@ class Detector(object):
                 else:
                     time_since_silence += (time.time() - start_time)
                     if time_since_silence > 5.0: # If silence for more than 5 sec
-                        return _process(recording_data)
+                        return recording_data
 
-    def play(self, sound_data):
+    def _freq_to_midi(self, freq):
+        """
+            Frequency to midi value
+        """
+        return 69 + 12 * np.log2(freq / 440)
+
+    def _midi_to_fftbin(self, note):
+        """
+            Pass
+        """
+        freq = 440 * 2.0 ** ((note - 69) / 12)
+        return note / self.freq_step
+
+
+class SoundPlayer(object):
+    """
+        Play wave MIDI data
+    """
+
+    def __init__(self):
+        """
+            Detection module reads sound data using python audio library(pyAudio)
+            configuration files are loaded from config module
+        """
+        self.sampling_rate = DETECTION_CONFIG['SAMPLING_RATE']
+
+    def play(self, recording_data):
         """
             Plays audio data using a MIDI library
         """
@@ -107,94 +133,80 @@ class Detector(object):
             rate=sampling_rate,
             output=True,
         )
+
+        sound_data = self._process(recording_data)
         # TODO Create a complete wave with all the notes and write
         # to it
         for note, delay, duration in sound_data:
             time.sleep(delay)
-            freq = _midi_to_freq(note)
-            wave = _create_wave(freq, sampling_rate, duration)
+            freq = self._midi_to_freq(note)
+            wave = self._create_wave(freq, duration)
             stream.write(wave)
             time.sleep(duration) # Sleep for the duration
 
-    def _midi_to_fftbin(self, note):
+    def _create_wave(self, freq, pressed_time):
         """
-            Pass
+            Write a wave using sine function. pressed_time indicates how long
+            the note is 'pressed'.
         """
-        return _midi_to_freq(note) / self.freq_step
+        wave = (
+            np.sin(
+                2 * np.pi * np.arange(
+                    self.sampling_rate * pressed_time
+                ) * freq / self.sampling_rate
+            )
+        ).astype(np.float32)
+        return wave
 
-# Internals
+    def _midi_to_freq(self, midi):
+        """
+            midi to frequency
+        """
+        return 440 * 2.0 ** ((midi - 69) / 12)
 
-def _process(recording_data):
-    """
-        Convert the frequency and time data
-        into wave
-        RETURNS:
-            (note, delay, duration)
-        Where, note is midi note value, delay is the interval between current
-        and previous note and duration is the time interval, the note lasts
-    """
-    # Algorithm :
-        # For each note get pair with the note and
-        # list of times where note doesn't change
+    def _process(self, recording_data):
+        """
+            Convert the frequency and time data
+            into wave
+            RETURNS:
+                (note, delay, duration)
+            Where, note is midi note value, delay is the interval between current
+            and previous note and duration is the time interval, the note lasts
+        """
+        # Algorithm :
+            # For each note get pair with the note and
+            # list of times where note doesn't change
 
-        # Do another pass over the list and filter out notes
-        # with very short durations
+            # Do another pass over the list and filter out notes
+            # with very short durations
 
-        # Calculate delays and durations for each note and return the result
+            # Calculate delays and durations for each note and return the result
 
-    note_times = [
-        (note, list(time for _, time in values)) for note, values in itertools.groupby(
-            recording_data,
-            lambda x: x[0]
-        )
-    ]
-    # Filter out all notes with duration less than .5 second
-    note_times_filtered = [
-        (note, times) for note, times in note_times
-        if (times[-1] - times[0]) > .5
-    ]
+        note_times = [
+            (note, list(time for _, time in values)) for note, values in itertools.groupby(
+                recording_data,
+                lambda x: x[0]
+            )
+        ]
+        # Filter out all notes with duration less than .5 second
+        note_times_filtered = [
+            (note, times) for note, times in note_times
+            if (times[-1] - times[0]) > .5
+        ]
 
-    # Filter out notes that that are bunched together
+        # Filter out notes that that are bunched together
 
-    processed = []
-    for index, note_data in enumerate(note_times_filtered):
-        current_note, current_times = note_data
-        # Use previous note to calculate delay
-        if index > 0:
-            # Create a temporary index pointing to the previous note
-            temp_index = index - 1
-            _, prev_times = note_times_filtered[temp_index]
-            delay = current_times[0] - prev_times[-1]
-        else:
-            delay = current_times[0] - 0
-        duration = current_times[-1] - current_times[0]
-        processed.append((current_note, delay, duration,))
-    print(processed)
-    return processed
-
-def _freq_to_midi(freq):
-    """
-        Frequency to midi value
-    """
-    return 69 + 12 * np.log2(freq / 440)
-
-def _midi_to_freq(midi):
-    """
-        midi to frequency
-    """
-    return 440 * 2.0 ** ((midi - 69) / 12)
-
-def _create_wave(freq, sampling_rate, pressed_time):
-    """
-        Write a wave using sine function. pressed_time indicates how long
-        the note is 'pressed'.
-    """
-    wave = (
-        np.sin(
-            2 * np.pi * np.arange(
-                sampling_rate * pressed_time
-            ) * freq / sampling_rate
-        )
-    ).astype(np.float32)
-    return wave
-
+        processed = []
+        for index, note_data in enumerate(note_times_filtered):
+            current_note, current_times = note_data
+            # Use previous note to calculate delay
+            if index > 0:
+                # Create a temporary index pointing to the previous note
+                temp_index = index - 1
+                _, prev_times = note_times_filtered[temp_index]
+                delay = current_times[0] - prev_times[-1]
+            else:
+                delay = current_times[0] - 0
+            duration = current_times[-1] - current_times[0]
+            processed.append((current_note, delay, duration,))
+        return processed
