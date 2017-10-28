@@ -102,12 +102,18 @@ class SoundDetector(object):
         """
         return 69 + 12 * np.log2(freq / 440)
 
+    def _midi_to_freq(self, midi):
+        """
+            midi to frequency
+        """
+        return 440 * 2.0 ** ((midi - 69) / 12)
+
+
     def _midi_to_fftbin(self, note):
         """
             Pass
         """
-        freq = 440 * 2.0 ** ((note - 69) / 12)
-        return note / self.freq_step
+        return self._midi_to_freq(note) / self.freq_step
 
 
 class SoundPlayer(object):
@@ -137,17 +143,40 @@ class SoundPlayer(object):
         sound_data = self._process(recording_data)
         # TODO Create a complete wave with all the notes and write
         # to it
+        wave_series = np.array([]).astype(np.float32)
         for note, delay, duration in sound_data:
-            time.sleep(delay)
+            silence = self._create_silence(delay)
             freq = self._midi_to_freq(note)
             wave = self._create_wave(freq, duration)
-            stream.write(wave)
-            time.sleep(duration) # Sleep for the duration
+            np.append(
+                wave_series,
+                np.concatenate([silence, wave])
+            )
+        print(wave_series)
+        #[WIP]
+        stream.write(wave_series)
+
+    def _create_silence(self, silence_time):
+        """
+            Create series for the duration no note is being played
+            INPUT :
+                silence_time
+            OUTPUT:
+                numpy series of zeros
+
+        """
+        silence = (0 * np.arange(self.sampling_rate * silence_time).astype(np.float32))
+        return silence
 
     def _create_wave(self, freq, pressed_time):
         """
             Write a wave using sine function. pressed_time indicates how long
             the note is 'pressed'.
+
+            INPUT :
+                freq,  note duration
+            Output:
+                numpy series
         """
         wave = (
             np.sin(
