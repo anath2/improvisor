@@ -132,29 +132,30 @@ class SoundPlayer(object):
         """
             Plays audio data using a MIDI library
         """
-        sampling_rate = self.sampling_rate
         stream = pyaudio.PyAudio().open(
             format=pyaudio.paFloat32,
             channels=1,
-            rate=sampling_rate,
+            rate=self.sampling_rate,
             output=True,
         )
+        wave = self.create_wave(recording_data)
+        stream.write(wave)
 
+    def create_wave(self, recording_data):
+        """
+            Combine sound waves
+        """
         sound_data = self._process(recording_data)
-        # TODO Create a complete wave with all the notes and write
-        # to it
         wave_series = np.array([]).astype(np.float32)
         for note, delay, duration in sound_data:
             silence = self._create_silence(delay)
             freq = self._midi_to_freq(note)
-            wave = self._create_wave(freq, duration)
+            wave = self._create_note(freq, duration)
             np.append(
                 wave_series,
                 np.concatenate([silence, wave])
             )
-        print(wave_series)
-        #[WIP]
-        stream.write(wave_series)
+        return wave_series
 
     def _create_silence(self, silence_time):
         """
@@ -168,7 +169,7 @@ class SoundPlayer(object):
         silence = (0 * np.arange(self.sampling_rate * silence_time).astype(np.float32))
         return silence
 
-    def _create_wave(self, freq, pressed_time):
+    def _create_note(self, freq, pressed_time):
         """
             Write a wave using sine function. pressed_time indicates how long
             the note is 'pressed'.
