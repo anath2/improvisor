@@ -146,14 +146,13 @@ class SoundPlayer(object):
             Combine sound waves
         """
         sound_data = self._process(recording_data)
-        wave_series = np.array([]).astype(np.float32)
-        wave_series = np.array([
-            np.concatenate(
-                self._create_silence(delay),
-                self._create_note(note, duration)
-            ) for note, delay, duration in sound_data
-        ])
-        return wave_series
+        wave_series = []
+        for note, delay, duration in sound_data:
+            wave = self._create_note(note, duration)
+            wave_series += list(wave)
+            silence = self._create_silence(delay)
+            wave_series += list(silence)
+        return np.array(wave_series)
 
     def _create_silence(self, silence_time):
         """
