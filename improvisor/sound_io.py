@@ -9,7 +9,7 @@ import itertools
 import numpy as np
 import pyaudio
 
-from .config import DETECTION_CONFIG
+from improvisor.config import DETECTION_CONFIG
 
 class SoundDetector(object):
     """
@@ -236,7 +236,7 @@ class SoundPlayer(object):
                 _, prev_times = note_times_filtered[temp_index]
                 delay = current_times[0] - prev_times[-1]
             else:
-                delay = current_times[0] - 0
+                delay = current_times[0]
             duration = current_times[-1] - current_times[0]
             processed.append((current_note, delay, duration,))
         return processed
