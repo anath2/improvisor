@@ -25,13 +25,13 @@ class TestOutput(unittest.TestCase):
             (62, 2.0),
             (62, 2.3),
             (62, 2.5),
-            (62, 2.0),
-            (62, 2.5),
-            (64, 3.0),
-            (64, 3.3),
-            (64, 3.5),
+            (62, 3.0),
+            (62, 3.5),
             (64, 4.0),
+            (64, 4.3),
             (64, 4.5),
+            (64, 5.0),
+            (64, 5.5),
         ]
         self.pl = SoundPlayer()
 
@@ -42,11 +42,14 @@ class TestOutput(unittest.TestCase):
         processed_sound = self.pl._process(self.recording_data)
 
         # Assert processed sound consists of only 3 notes
-        self.assertTrue(len(processed_sound), 3)
+        self.assertTrue(len(processed_sound) == 3)
 
 
     def test_create_wave(self):
         """
             Write a wave
         """
-        pass
+        wave = self.pl.create_wave(self.recording_data)
+
+        # Assert wave is not empty
+        self.assertTrue(len(wave) > 0)

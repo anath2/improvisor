@@ -147,14 +147,12 @@ class SoundPlayer(object):
         """
         sound_data = self._process(recording_data)
         wave_series = np.array([]).astype(np.float32)
-        for note, delay, duration in sound_data:
-            silence = self._create_silence(delay)
-            freq = self._midi_to_freq(note)
-            wave = self._create_note(freq, duration)
-            np.append(
-                wave_series,
-                np.concatenate([silence, wave])
-            )
+        wave_series = np.array([
+            np.concatenate(
+                self._create_silence(delay),
+                self._create_note(note, duration)
+            ) for note, delay, duration in sound_data
+        ])
         return wave_series
 
     def _create_silence(self, silence_time):
@@ -169,16 +167,17 @@ class SoundPlayer(object):
         silence = (0 * np.arange(self.sampling_rate * silence_time).astype(np.float32))
         return silence
 
-    def _create_note(self, freq, pressed_time):
+    def _create_note(self, note, pressed_time):
         """
             Write a wave using sine function. pressed_time indicates how long
             the note is 'pressed'.
 
             INPUT :
-                freq,  note duration
+                note,  note duration
             Output:
                 numpy series
         """
+        freq = self._midi_to_freq(note)
         wave = (
             np.sin(
                 2 * np.pi * np.arange(
