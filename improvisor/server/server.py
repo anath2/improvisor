@@ -4,15 +4,18 @@
 import os
 from flask import Flask, render_template
 
-app = Flask(__name__)
-app.config.from_object(__name__)
-
+template_dir = os.path.join(
+    os.path.dirname(os.path.abspath(os.path.dirname(__file__))),
+    'static'
+)
+app = Flask(__name__, template_folder=template_dir)
 @app.route('/')
 def show_home():
     """
         Homepage
     """
-    return render_template('improvisor_page')
+
+    return render_template('index.html')
 
 @app.route('/', methods=['POST'])
 def get_input():
