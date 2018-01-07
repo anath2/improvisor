@@ -1,4 +1,4 @@
 *.pyc
 *.pdf
 venv
-improvisor/js/node_modules/
+improvisor/client/node_modules/
