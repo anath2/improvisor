@@ -7,8 +7,17 @@ const config = {
         filename: 'bundle.js'
     },
     resolve: {
-        extension: ['.js', '.jsx', '.css']
+        extensions: ['.js', '.jsx', '.css']
     },
-};
+    module: {
+        rules: [
+          {
+            test: /\.jsx?/,
+            exclude: /node_modules/,
+            use: 'babel-loader'
+          }
+        ]
+    }
+}
 
 module.exports = config
