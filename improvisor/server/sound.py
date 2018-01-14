@@ -11,6 +11,43 @@
     Send the signal to the front end, that would play the desired
     animation
 """
+import pyaudio
+import wave
+
+# DEFINE CONSTANTS
+FORMAT = pyaudio.paInt16
+CHANNELS = 2
+SAMPLING_RATE = 44100
+CHUNK = 1024
+RECORDING_SECONDS = 5
+OUTFILE_NAME = 'record.wav'
+
+def listen():
+    """
+        Record audio and detect frequencies
+    """
+    audio = pyaudio.PyAudio()
+    stream = audio.open(
+        format=FORMAT,
+        channels=CHANNELS,
+        rate=SAMPLING_RATE,
+        input=True,
+        frames_per_buffer=CHUNK
+    )
+    num_of_chunks = (SAMPLING_RATE / CHUNK) * RECORDING_SECONDS
+
+    print('Listening...')
+    for chunk in range(num_of_chunks):
+
+        # Perform pitch detection and send via post request
+        # to the server
+        data = stream.read(chunk)
+        print('data:', data)
+
+    # stop Recording
+    stream.stop_stream()
+    stream.close()
+    audio.terminate()
 
 
 
