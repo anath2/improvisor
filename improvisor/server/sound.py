@@ -13,6 +13,7 @@
 """
 import pyaudio
 import wave
+import numpy as np
 
 # DEFINE CONSTANTS
 FORMAT = pyaudio.paInt16
@@ -21,6 +22,20 @@ SAMPLING_RATE = 44100
 CHUNK = 1024
 RECORDING_SECONDS = 5
 OUTFILE_NAME = 'record.wav'
+
+
+def calculate_fft(data, samples):
+    """
+        Calculate the fft
+    """
+    # Use a hanning window function
+    hanning_window = 0.5 * (
+        1 - np.cos(
+            np.linspace(0, 2 * np.pi, samples, False)
+        )
+    )
+
+
 
 def listen():
     """
@@ -42,6 +57,7 @@ def listen():
         # Perform pitch detection and send via post request
         # to the server
         data = stream.read(chunk)
+
         print('data:', data)
 
     # stop Recording
