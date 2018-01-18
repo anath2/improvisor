@@ -11,59 +11,32 @@
     Send the signal to the front end, that would play the desired
     animation
 """
-import pyaudio
-import wave
-import numpy as np
+import sounddevice as sd
+# import soundfile as sf
+# import wave
+# import numpy as np
 
 # DEFINE CONSTANTS
-FORMAT = pyaudio.paInt16
 CHANNELS = 2
 SAMPLING_RATE = 44100
-CHUNK = 1024
 RECORDING_SECONDS = 5
 OUTFILE_NAME = 'record.wav'
-
-
-def calculate_fft(data, samples):
-    """
-        Calculate the fft
-    """
-    # Use a hanning window function
-    hanning_window = 0.5 * (
-        1 - np.cos(
-            np.linspace(0, 2 * np.pi, samples, False)
-        )
-    )
-
-
 
 def listen():
     """
         Record audio and detect frequencies
     """
-    audio = pyaudio.PyAudio()
-    stream = audio.open(
-        format=FORMAT,
+    sounddata = sd.rec(
+        int(SAMPLING_RATE * RECORDING_SECONDS),
+        samplerate=SAMPLING_RATE,
         channels=CHANNELS,
-        rate=SAMPLING_RATE,
-        input=True,
-        frames_per_buffer=CHUNK
+        blocking=True
     )
-    num_of_chunks = (SAMPLING_RATE / CHUNK) * RECORDING_SECONDS
 
-    print('Listening...')
-    for chunk in range(num_of_chunks):
+    # Calculate fourier transform for the data
 
-        # Perform pitch detection and send via post request
-        # to the server
-        data = stream.read(chunk)
-
-        print('data:', data)
-
-    # stop Recording
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
+if __name__ == '__main__':
+    listen()
 
 
 
