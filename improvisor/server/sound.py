@@ -11,34 +11,52 @@
     Send the signal to the front end, that would play the desired
     animation
 """
-import sounddevice as sd
-# import soundfile as sf
-# import wave
-# import numpy as np
 
-# DEFINE CONSTANTS
-CHANNELS = 2
-SAMPLING_RATE = 44100
-RECORDING_SECONDS = 5
-OUTFILE_NAME = 'record.wav'
+import sys
+from audiolazy import (tostream, AudioIO, freq2str, sHz, chunks,
+                       lowpass, envelope, pi, thub, Stream, maverage)
+from numpy.fft import rfft
 
-def listen():
-    """
-        Record audio and detect frequencies
-    """
-    sounddata = sd.rec(
-        int(SAMPLING_RATE * RECORDING_SECONDS),
-        samplerate=SAMPLING_RATE,
-        channels=CHANNELS,
-        blocking=True
-    )
-
-    # Calculate fourier transform for the data
-
-if __name__ == '__main__':
-    listen()
+def limiter(sig, threshold=.1, size=256, env=envelope.rms, cutoff=pi/2048):
+  sig = thub(sig, 2)
+  return sig * Stream( 1. if el <= threshold else threshold / el
+                       for el in maverage(size)(env(sig, cutoff=cutoff)) )
 
 
+@tostream
+def dft_pitch(sig, size=2048, hop=None):
+  for blk in Stream(sig).blocks(size=size, hop=hop):
+    dft_data = rfft(blk)
+    idx, vmax = max(enumerate(dft_data),
+                    key=lambda el: abs(el[1]) / (2 * el[0] / size + 1)
+                   )
+    yield 2 * pi * idx / size
+
+
+def pitch_from_mic(upd_time_in_ms):
+  rate = 44100
+  s, Hz = sHz(rate)
+
+  api = sys.argv[1] if sys.argv[1:] else None # Choose API via command-line
+  chunks.size = 1 if api == "jack" else 16
+
+  with AudioIO(api=api) as recorder:
+    snd = recorder.record(rate=rate)
+    sndlow = lowpass(400 * Hz)(limiter(snd, cutoff=20 * Hz))
+    hop = int(upd_time_in_ms * 1e-3 * s)
+    for pitch in freq2str(dft_pitch(sndlow, size=2*hop, hop=hop) / Hz):
+      yield pitch
+
+
+    # rate = 44100 # Sampling rate, in samples/second
+    # s, Hz = sHz(rate) # Seconds and hertz
+    # ms = 1e-3 * s
+    # note1 = karplus_strong(440 * Hz) # Pluck "digitar" synth
+    # note2 = zeros(300 * ms).append(karplus_strong(880 * Hz))
+    # notes = (note1 + note2) * .5
+    # sound = notes.take(int(2 * s)) # 2 seconds of a Karplus-Strong note
+    # with AudioIO(True) as player: # True means "wait for all sounds to stop"
+    #     player.play(sound, rate=rate)
 
 # """
 #     Plays the song back to the user. This module uses fast fourier transform.
