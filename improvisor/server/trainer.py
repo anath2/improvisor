@@ -3,6 +3,7 @@
 """
 import numpy as np
 import pandas as pd
+import keras
 from audiolazy import (
     Stream, AudioIO, sHz, chunks, lowpass, limiter
 )
@@ -57,8 +58,18 @@ class Trainer(object):
         """
             Convert pitches to dft
         """
-        pass
+        dft_list = []
+        for blk in Stream(signal).blocks(size=size, hop=hop):
+            dft = np.fft.rfft(blk)
+            dft_list.append(dft)
+        return dft_list
 
+    @staticmethod
+    def normalize_data(dft_df):
+        """
+            Normalize and clean up dimensions
+        """
+        pass
 
 # def gen_traindata(note, signal, block_size=2048, hop=None):
 #     """
