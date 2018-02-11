@@ -15,19 +15,6 @@ class Trainer(object):
     def __init__(self, upd_time_in_ms):
         self.upd_time_in_ms = upd_time_in_ms
 
-    def load_data(self, data_path):
-        """
-            Load the data.csv file that contains
-            training dft data for each note
-        """
-        pass
-
-    def save_data(self, data_path):
-        """
-            Save / Append training data to data file
-        """
-        pass
-
     def record_snd(self, note):
         """
             Record sound training data from system
@@ -37,7 +24,6 @@ class Trainer(object):
         sec, Hz = sHz(rate)
         dft_data = []
         chunks.size = 1
-
         with AudioIO(api=None) as recorder:
             snd = recorder.record(rate=rate)
             sndlow = lowpass(400 * Hz)(limiter(snd, cutoff=20 * Hz))
@@ -45,6 +31,19 @@ class Trainer(object):
             for dft in Trainer.pitch_to_dft(sndlow, size=2*hop, hop=hop):
                 dft_data.append(dft)
 
+    def load_data(self, data_path):
+        """
+            Load the data.csv file that contains
+            training dft data for each note
+        """
+        sound_df = pd.read_csv(data_path)
+        return sound_df
+
+    def save_data(self, data_path, training_data):
+        """
+            Save / Append training data to data file
+        """
+        training_data.to_csv(data_path)
 
     @staticmethod
     def train_nn(self, train_data):
