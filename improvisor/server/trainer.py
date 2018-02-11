@@ -31,6 +31,8 @@ class Trainer(object):
             for dft in Trainer.pitch_to_dft(sndlow, size=2*hop, hop=hop):
                 dft_data.append(dft)
 
+        return dft_to_df(dft_data, note)
+
     def load_data(self, data_path):
         """
             Load the data.csv file that contains
@@ -44,6 +46,11 @@ class Trainer(object):
             Save / Append training data to data file
         """
         training_data.to_csv(data_path)
+
+    @staticmethod
+    def dft_to_df(self, dft, note):
+        df = pd.DataFrame(dft, index=(len(dft) * [note]))
+        return df
 
     @staticmethod
     def train_nn(self, train_data):
