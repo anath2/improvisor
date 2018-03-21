@@ -1,3 +1,9 @@
+'''
+Module contents:
+  - SoundInterface (ABC)
+  - Improvisor
+'''
+
 """
     Algorithm
 
@@ -11,41 +17,78 @@
     Send the signal to the front end, that would play the desired
     animation
 """
+from abc import ABCMeta, abstractmethod
 
-import sys
-from audiolazy import (tostream, AudioIO, freq2str, sHz, chunks,
-                       lowpass, envelope, pi, thub, Stream, maverage)
-from numpy.fft import rfft
+class SoundInterface(ABCMeta):
 
-def limiter(sig, threshold=.1, size=256, env=envelope.rms, cutoff=pi/2048):
-  sig = thub(sig, 2)
-  return sig * Stream( 1. if el <= threshold else threshold / el
-                       for el in maverage(size)(env(sig, cutoff=cutoff)) )
+    @abstractmethod
+    def listen(self):
+      '''
+      Listen audio
+      '''
+      pass
+
+    @abstractmethod
+    def process(self):
+      '''
+      Process sound data
+      '''
+      pass
+
+    @abstractmethod
+    def write(self):
+      '''
+      Write audio data to the file or audio output
+      '''
+      pass
+
+class Improvisor(SoundInterface):
+  '''
+  Improvisor
+  '''
+  pass
 
 
-@tostream
-def dft_pitch(sig, size=2048, hop=None):
-  for blk in Stream(sig).blocks(size=size, hop=hop):
-    dft_data = rfft(blk)
-    idx, vmax = max(enumerate(dft_data),
-                    key=lambda el: abs(el[1]) / (2 * el[0] / size + 1)
-                   )
-    yield 2 * pi * idx / size
+  # Private methods
+
+# import sys
+# from audiolazy import (tostream, AudioIO, freq2str, sHz, chunks,
+#                        lowpass, envelope, pi, thub, Stream, maverage)
+# from numpy.fft import rfft
+
+# def limiter(sig, threshold=.1, size=256, env=envelope.rms, cutoff=pi/2048):
+#   sig = thub(sig, 2)
+#   return sig * Stream( 1. if el <= threshold else threshold / el
+#                        for el in maverage(size)(env(sig, cutoff=cutoff)) )
 
 
-def pitch_from_mic(upd_time_in_ms):
-  rate = 44100
-  s, Hz = sHz(rate)
+# @tostream
+# def dft_pitch(sig, size=2048, hop=None):
+#   for blk in Stream(sig).blocks(size=size, hop=hop):
+#     dft_data = rfft(blk)
+#     idx, vmax = max(enumerate(dft_data),
+#                     key=lambda el: abs(el[1]) / (2 * el[0] / size + 1)
+#                    )
+#     yield 2 * pi * idx / size
 
-  api = sys.argv[1] if sys.argv[1:] else None # Choose API via command-line
-  chunks.size = 1 if api == "jack" else 16
 
-  with AudioIO(api=api) as recorder:
-    snd = recorder.record(rate=rate)
-    sndlow = lowpass(400 * Hz)(limiter(snd, cutoff=20 * Hz))
-    hop = int(upd_time_in_ms * 1e-3 * s)
-    for pitch in freq2str(dft_pitch(sndlow, size=2*hop, hop=hop) / Hz):
-      yield pitch
+# def pitch_from_mic(upd_time_in_ms):
+#   rate = 44100
+#   s, Hz = sHz(rate)
+
+#   api = sys.argv[1] if sys.argv[1:] else None # Choose API via command-line
+#   chunks.size = 1 if api == "jack" else 16
+
+#   with AudioIO(api=api) as recorder:
+#     snd = recorder.record(rate=rate)
+#     sndlow = lowpass(400 * Hz)(limiter(snd, cutoff=20 * Hz))
+#     hop = int(upd_time_in_ms * 1e-3 * s)
+#     for pitch in freq2str(dft_pitch(sndlow, size=2*hop, hop=hop) / Hz):
+#       yield pitch
+
+
+
+
 
 
     # rate = 44100 # Sampling rate, in samples/second

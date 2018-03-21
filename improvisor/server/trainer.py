@@ -8,6 +8,11 @@ from audiolazy import (
     Stream, AudioIO, sHz, chunks, lowpass, limiter
 )
 
+
+
+
+
+
 class Trainer(object):
     """
         Trainer class for training the neural network
