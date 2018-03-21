@@ -31,7 +31,7 @@ class Trainer(object):
             for dft in Trainer.pitch_to_dft(sndlow, size=2*hop, hop=hop):
                 dft_data.append(dft)
 
-        return dft_to_df(dft_data, note)
+        return Trainer.dft_to_df(dft_data, note)
 
     def load_data(self, data_path):
         """
@@ -48,7 +48,7 @@ class Trainer(object):
         training_data.to_csv(data_path)
 
     @staticmethod
-    def dft_to_df(self, dft, note):
+    def dft_to_df(dft, note):
         df = pd.DataFrame(dft, index=(len(dft) * [note]))
         return df
 
