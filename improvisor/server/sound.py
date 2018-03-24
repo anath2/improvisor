@@ -43,20 +43,42 @@ class SoundInterface(ABCMeta):
       '''
       pass
 
-class Improvisor(SoundInterface):
+class PitchDetector(SoundInterface):
   '''
-  Improvisor listen/read to audio from a microphone or a
-  file and play/write computer generated response
+  Detect pitch from Audio
   '''
-  def __init__(self):
-    tolerance = 0.8
-    downsample = 1
-    win_s = 4096 // downsample # fft size
-    hop_s = 1024  // downsample # hop size
-    pitch_o = pitch("yin", win_s, hop_s, RATE)
-    pitch_o.set_unit("midi")
-    pitch_o.set_tolerance(tolerance)
+  def read(self, src, *args, **kwargs):
+    '''
+    Read input data as numpy array
+    from an audio source
+    ARGS:
+      src                - Audio source, could be a sound device or a file
+    RETURNS:
+      out              - A pandas series representation of input data
+    '''
+    pass
 
+  def process(self, algo, *args, **kwargs):
+    '''
+    Process audio data calculate pitch in an audion file
+    ARGS:
+      algo                  - Pitch detection algorithm in use
+    RETURNS:
+      processed_audio       - Returns a pandas series containing notes
+                              corresponding to audio in the read audion file
+    '''
+    pass
+
+  def write(self, player, *args, **kwargs):
+    '''
+    Write audion either to a file, or to audio output devices.
+    The audio audio for the output data generated is written either to
+    the disk as a wave file or to output
+    ARGS:
+      player                - Player ditermine the timbre and instrument
+                              that plays the sound
+    '''
+    pass
 
 
   # Private methods
