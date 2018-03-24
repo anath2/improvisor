@@ -17,8 +17,11 @@ Module contents:
     Send the signal to the front end, that would play the desired
     animation
 """
+import numpy as np
+import pyaudio as paud
+
 from abc import ABCMeta, abstractmethod
-from aubio import pitch
+
 
 class SoundInterface(ABCMeta):
 
@@ -56,7 +59,14 @@ class PitchDetector(SoundInterface):
     RETURNS:
       out              - A pandas series representation of input data
     '''
-    pass
+    if isinstance(src, paud.PyAudio):
+      # Audio is from the recording device
+      aud_arry = self._listen(sec=10)
+
+    if isinstance(src, str):
+      # Audio is from an audio file, proceed accordingly
+      pass
+
 
   def process(self, algo, *args, **kwargs):
     '''
@@ -82,6 +92,10 @@ class PitchDetector(SoundInterface):
 
 
   # Private methods
+  def _listen(self, **kwargs):
+    pass
+
+
 
 # import sys
 # from audiolazy import (tostream, AudioIO, freq2str, sHz, chunks,
