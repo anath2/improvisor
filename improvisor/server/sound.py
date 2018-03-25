@@ -17,6 +17,8 @@ Module contents:
     Send the signal to the front end, that would play the desired
     animation
 """
+import time
+
 import numpy as np
 import pyaudio as paud
 
@@ -61,7 +63,17 @@ class PitchDetector(SoundInterface):
     '''
     if isinstance(src, paud.PyAudio):
       # Audio is from the recording device
-      aud_arry = self._listen(sec=10)
+      if kwargs:
+        if 'sec' in kwargs:
+          sec = kwargs['sec']
+          aud_arry = self._listen(sec=10)
+      else:
+        audio_arr = []
+        try:
+          audo_arr = self.listen()
+          time.sleep(1)
+        except KeyboardInterrupt as err:
+          print('Recording terminated')
 
     if isinstance(src, str):
       # Audio is from an audio file, proceed accordingly
@@ -93,7 +105,16 @@ class PitchDetector(SoundInterface):
 
   # Private methods
   def _listen(self, **kwargs):
-    pass
+    '''
+    Listen to audio
+    ARGS:
+      kwargs(optional):
+        sec               - Time in seconds to listen to audio input
+    RETURNS:
+      aud_arry            - An arry of audion signal in time domain
+    '''
+
+
 
 
 
