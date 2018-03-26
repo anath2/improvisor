@@ -66,18 +66,19 @@ class PitchDetector(SoundInterface):
       if kwargs:
         if 'sec' in kwargs:
           sec = kwargs['sec']
-          aud_arry = self._listen(sec=10)
+          aud_arry = self._listen(self, sec=10)
       else:
         audio_arr = []
         try:
           audo_arr = self.listen()
           time.sleep(1)
         except KeyboardInterrupt as err:
-          print('Recording terminated')
+          print('Recording terminated...')
 
     if isinstance(src, str):
       # Audio is from an audio file, proceed accordingly
-      pass
+        print('Reading audion file...')
+        data = self._read(self, src)
 
 
   def process(self, algo, *args, **kwargs):
@@ -113,8 +114,14 @@ class PitchDetector(SoundInterface):
     RETURNS:
       aud_arry            - An arry of audion signal in time domain
     '''
+    pass
 
-
+  def _read(self, path):
+    '''
+    ARGS:
+      path                - Path to audio file
+    '''
+    pass
 
 
 
