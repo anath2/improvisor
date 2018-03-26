@@ -18,37 +18,13 @@ Module contents:
     animation
 """
 import time
-
+import logging
 import numpy as np
 import pyaudio as paud
 
-from abc import ABCMeta, abstractmethod
+logger = logging.getLogger(__name__)
 
-
-class SoundInterface(ABCMeta):
-
-    @abstractmethod
-    def read_audio(self):
-      '''
-      Listen audio
-      '''
-      pass
-
-    @abstractmethod
-    def process(self):
-      '''
-      Process sound data
-      '''
-      pass
-
-    @abstractmethod
-    def write_audio(self):
-      '''
-      Write audio data to the file or audio output
-      '''
-      pass
-
-class PitchDetector(SoundInterface):
+class PitchDetector(object):
   '''
   Detect pitch from Audio
   '''
@@ -66,20 +42,19 @@ class PitchDetector(SoundInterface):
       if kwargs:
         if 'sec' in kwargs:
           sec = kwargs['sec']
-          aud_arry = self._listen(self, sec=10)
+          logger.info('Recording audio for {} seconds'.format(sec))
+          aud_arry = _listen(src, sec=10)
       else:
-        audio_arr = []
         try:
-          audo_arr = self.listen()
+          logger.info('Recording audio...')
+          aud_arry = _listen(src)
           time.sleep(1)
-        except KeyboardInterrupt as err:
-          print('Recording terminated...')
-
+        except KeyboardInterrupt:
+          logger.info('Recording terminated...')
     if isinstance(src, str):
-      # Audio is from an audio file, proceed accordingly
-        print('Reading audion file...')
-        data = self._read(self, src)
-
+        logger.info('Reading audion file...')
+        aud_arry = _read(src)
+    return aud_arry
 
   def process(self, algo, *args, **kwargs):
     '''
@@ -104,25 +79,25 @@ class PitchDetector(SoundInterface):
     pass
 
 
-  # Private methods
-  def _listen(self, **kwargs):
-    '''
-    Listen to audio
-    ARGS:
-      kwargs(optional):
-        sec               - Time in seconds to listen to audio input
-    RETURNS:
-      aud_arry            - An arry of audion signal in time domain
-    '''
-    pass
+# Private methods
+def _listen(paud, **kwargs):
+  '''
+  Listen to audio
+  ARGS:
+    paud                - PyAudio object
+    kwargs(optional):
+      sec               - Time in seconds to listen to audio input
+  RETURNS:
+    aud_arry            - An arry of audion signal in time domain
+  '''
+  return np.array()
 
-  def _read(self, path):
-    '''
-    ARGS:
-      path                - Path to audio file
-    '''
-    pass
-
+def _read(path):
+  '''
+  ARGS:
+    path                - Path to audio file
+  '''
+  return np.array()
 
 
 # import sys
