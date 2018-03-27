@@ -19,8 +19,9 @@ Module contents:
 """
 import time
 import logging
+import pyaudio
+
 import numpy as np
-import pyaudio as paud
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,9 @@ class PitchDetector(object):
   '''
   Detect pitch from Audio
   '''
+  def __init__(self, use_mic):
+    self.mic = use_mic
+
   def read(self, src, *args, **kwargs):
     '''
     Read input data as numpy array
@@ -37,21 +41,14 @@ class PitchDetector(object):
     RETURNS:
       out              - A pandas series representation of input data
     '''
-    if isinstance(src, paud.PyAudio):
-      # Audio is from the recording device
+    if self.mic:
       if kwargs:
         if 'sec' in kwargs:
           sec = kwargs['sec']
-          logger.info('Recording audio for {} seconds'.format(sec))
-          aud_arry = _listen(src, sec=10)
+          aud_arry = _listen(time=sec)
       else:
-        try:
-          logger.info('Recording audio...')
-          aud_arry = _listen(src)
-          time.sleep(1)
-        except KeyboardInterrupt:
-          logger.info('Recording terminated...')
-    if isinstance(src, str):
+          aud_arry = _listen()
+    else:
         logger.info('Reading audion file...')
         aud_arry = _read(src)
     return aud_arry
@@ -80,17 +77,42 @@ class PitchDetector(object):
 
 
 # Private methods
-def _listen(paud, **kwargs):
+def _listen(chunk=1024, frmt=pyaudio.paInt16, ch=2, rate=44100, time=None):
   '''
   Listen to audio
   ARGS:
-    paud                - PyAudio object
-    kwargs(optional):
-      sec               - Time in seconds to listen to audio input
+    chunk               - Size of audio buffer in frames (1024 by default)
+    format              - Format for audio data (16 bit Int by default)
+    ch                  - Number of channels (2 by default)
+    rate                - Sampling Rate in frames per sec (44100 by default)
+    time                - Recording time (None by default,
+                          stop on keyboard interrupt)
+
   RETURNS:
-    aud_arry            - An arry of audion signal in time domain
+    aud_arry            - Data representation of audio data in time
+                          domain. The size of the list is equal to the number of
+                          audio buffers in the time period
   '''
-  return np.array()
+  p = pyaudio.PyAudio()
+  stream = p.open(format=frmt, channels=ch, rate=rate, input=True,
+                    frames_per_buffer=chunk)
+  logger.info('Recording...')
+  frames = []
+  if time:
+    for i in range(0, int(rate / chunk) * time):
+      data = stream.read(chunk)
+      frames.append(data)
+  else:
+    logger.info('Press CTRL-C on terminal window to stop recording')
+    while True:
+      try:
+        data = stream.read(chunk)
+        frames.append(data)
+      except KeyboardInterrupt:
+        logger.info('Stopping recording...')
+        break
+  return frames
+
 
 def _read(path):
   '''
