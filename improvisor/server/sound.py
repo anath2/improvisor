@@ -29,10 +29,11 @@ class PitchDetector(object):
   '''
   Detect pitch from Audio
   '''
-  def __init__(self, use_mic):
+  def __init__(self, use_mic, **kwargs):
     self.mic = use_mic
 
-  def read(self, src, *args, **kwargs):
+
+  def read(self, src=None, time=None):
     '''
     Read input data as numpy array
     from an audio source
@@ -41,16 +42,16 @@ class PitchDetector(object):
     RETURNS:
       out              - A pandas series representation of input data
     '''
-    if self.mic:
-      if kwargs:
-        if 'sec' in kwargs:
-          sec = kwargs['sec']
-          aud_arry = _listen(time=sec)
-      else:
-          aud_arry = _listen()
+    if src:
+      logger.info('Reading audio file...')
+      aud_arry = _read(src)
     else:
-        logger.info('Reading audion file...')
-        aud_arry = _read(src)
+        if time:
+          logger.info('Recording for {} seconds'.format(time))
+          aud_arry = _listen(time=time)
+        else:
+          logger.info('Recording audio, press CTRL-C to stop')
+          aud_arry = _listen()
     return aud_arry
 
   def process(self, algo, *args, **kwargs):
@@ -111,6 +112,7 @@ def _listen(chunk=1024, frmt=pyaudio.paInt16, ch=2, rate=44100, time=None):
       except KeyboardInterrupt:
         logger.info('Stopping recording...')
         break
+  frames = np.array(frames)
   return frames
 
 
