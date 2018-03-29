@@ -119,7 +119,9 @@ def _read(path):
   ARGS:
     path                - Path to audio file
   '''
-  return np.array()
+  with open(path, 'rb') as f:
+    data = f.read()
+  return data
 
 
 # import sys
