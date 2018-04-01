@@ -29,9 +29,9 @@ class PitchDetector(object):
   '''
   Detect pitch from Audio
   '''
-  def __init__(self, use_mic, **kwargs):
-    self.mic = use_mic
-
+  def __init__(self, algo):
+    self.algo = algo
+    self.signal = None
 
   def read(self, src=None, time=None):
     '''
@@ -52,18 +52,13 @@ class PitchDetector(object):
         else:
           logger.info('Recording audio, press CTRL-C to stop')
           aud_arry = _listen()
-    return aud_arry
+    self.signal = aud_arry
 
-  def process(self, algo, *args, **kwargs):
+  def process(self):
     '''
     Process audio data calculate pitch in an audion file
-    ARGS:
-      algo                  - Pitch detection algorithm in use
-    RETURNS:
-      processed_audio       - Returns a pandas series containing notes
-                              corresponding to audio in the read audion file
     '''
-    pass
+    self.signal = self.algo(self.signal)
 
   def write(self, player, *args, **kwargs):
     '''
