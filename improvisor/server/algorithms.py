@@ -38,13 +38,14 @@ def yinpitch(signal, fs, w_size=6000, tau_max=3000):
         s += r[i]
         d[i] = r[i] / ((1 / i) * s)
 
-    # Select peaks
+    # Select frequencies
+    freqs = []
     for i in range(tau_max):
         if d[i] > 0.5:
             continue
         if d[i-1] > d[i] < d[i+1]:
             freq = fs / i
-            print('The frequency is', freq)
-
+            
     # Map pitches to the input signal
-    
+
+    # Divide the freq
