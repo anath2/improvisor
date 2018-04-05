@@ -45,7 +45,11 @@ def yinpitch(signal, fs, w_size=6000, tau_max=3000):
             continue
         if d[i-1] > d[i] < d[i+1]:
             freq = fs / i
-            
-    # Map pitches to the input signal
+            freqs.append(freq)
 
-    # Divide the freq
+    # Map pitches to the input signal
+    to_pad = 0 if len(signal) % tau_max == 0 else tau_max - (len(signal) % tau_max)
+    extended_signal = np.resize(signal, len(signal) + to_pad)
+    signal_2d = extended_signal.reshape(len(extended_signal) // tau_max, tau_max)
+    mapped = zip(freqs, signal_2d)
+    return mapped
