@@ -31,5 +31,5 @@ sounddevice==0.3.10
 SoundFile==0.9.0.post1
 tensorflow==1.4.0
 tensorflow-tensorboard==0.4.0rc2
-Werkzeug==0.12.2
+Werkzeug==3.1.6
 wrapt==1.10.11
